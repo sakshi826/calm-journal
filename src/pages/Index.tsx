@@ -77,7 +77,7 @@ const Index = () => {
           disabled={!canSave}
           className="journal-save-btn px-8 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Save ✨
+          Save
         </button>
       </div>
     </div>
