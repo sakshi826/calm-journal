@@ -1,100 +1,101 @@
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Check, ArrowLeft, Send } from "lucide-react";
 import { getUserId } from "../lib/auth";
-import { saveJournalEntry, JournalEntry } from "../lib/db";
+import { saveJournalEntry } from "../lib/db";
 
-const PROMPT = "What's one thing you're grateful for today?";
+const PROMPTS = [
+  "What made you smile today?",
+  "Describe a challenge you overcame recently.",
+  "What are you looking forward to tomorrow?",
+  "Write about someone you're grateful for.",
+  "What's one thing you want to let go of?"
+];
 
 const Index = () => {
   const [entry, setEntry] = useState("");
-  const [saved, setSaved] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
-
-  const canSave = entry.trim().length > 0;
+  const [promptIndex, setPromptIndex] = useState(0);
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSave = async () => {
-    if (!canSave) return;
-
     const userId = getUserId();
-    if (!userId) return;
-
-    const journalEntry: JournalEntry = {
-      content: entry.trim(),
-      logged_at: new Date().toISOString(),
-      tags: [],
-      is_private: true
-    };
-
-    try {
-      await saveJournalEntry(userId, journalEntry);
-      setSaved(true);
-    } catch (error) {
-      console.error("Failed to save journal entry:", error);
+    if (userId && entry.trim()) {
+      setIsSaving(true);
+      try {
+        await saveJournalEntry(userId, {
+          content: entry.trim(),
+          prompt: PROMPTS[promptIndex],
+          logged_at: new Date().toISOString(),
+        });
+        setIsSaved(true);
+      } catch (error) {
+        console.error("Failed to save journal entry:", error);
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
-  const handleSkip = () => {
-    setDismissed(true);
+  const nextPrompt = () => {
+    setPromptIndex((prev) => (prev + 1) % PROMPTS.length);
+    setEntry("");
   };
 
-  if (dismissed) {
+  if (isSaved) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-muted-foreground text-lg">Maybe next time 🌿</p>
-      </div>
-    );
-  }
-
-  if (saved) {
-    return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-background gap-4 animate-fade-in">
-        <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-          <Check className="w-8 h-8 text-primary" />
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 animate-in fade-in zoom-in duration-500">
+        <div className="w-20 h-20 rounded-full bg-success/20 flex items-center justify-center">
+          <Check className="w-10 h-10 text-success" strokeWidth={3} />
         </div>
-        <p className="text-2xl font-display text-foreground">Reflection Saved!</p>
-        <p className="text-muted-foreground">Great job taking a moment for yourself.</p>
+        <div>
+          <h2 className="text-3xl font-bold text-foreground">Reflection Saved</h2>
+          <p className="text-muted-foreground mt-2 max-w-xs">Your thoughts have been safely stored for your future self.</p>
+        </div>
+        <Button
+          variant="outline"
+          onClick={() => { setIsSaved(false); setEntry(""); }}
+          className="rounded-full px-8"
+        >
+          Writer another
+        </Button>
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 py-12 gap-8">
-      <h1 className="text-3xl md:text-4xl font-display text-foreground tracking-tight">
-        Daily Calm Reflection
-      </h1>
-
-      {/* Prompt Card */}
-      <div className="prompt-card w-full max-w-md rounded-2xl p-8 text-center">
-        <p className="text-lg md:text-xl italic text-foreground/80 leading-relaxed">
-          "{PROMPT}"
-        </p>
+    <div className="max-w-2xl mx-auto space-y-8 py-8 px-4">
+      <div className="space-y-4 text-center">
+        <span className="text-xs font-bold uppercase tracking-widest text-primary opacity-70">Journaling Prompt</span>
+        <h1 className="text-3xl md:text-4xl font-bold text-foreground transition-all duration-500 min-h-[80px]">
+          {PROMPTS[promptIndex]}
+        </h1>
+        <Button variant="ghost" size="sm" onClick={nextPrompt} className="text-muted-foreground hover:text-primary rounded-full">
+          Gives me another prompt
+        </Button>
       </div>
 
-      {/* Text Area */}
-      <textarea
-        className="journal-textarea w-full max-w-md rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground p-4 text-base leading-relaxed resize-none focus:outline-none focus:ring-2 focus:ring-primary/30 transition-shadow"
-        rows={5}
-        placeholder="Write your thoughts..."
-        value={entry}
-        onChange={(e) => setEntry(e.target.value)}
-      />
-
-      {/* CTAs */}
-      <div className="flex gap-4 items-center">
-        <button
-          onClick={handleSkip}
-          className="px-6 py-2.5 rounded-full text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
-        >
-          Skip
-        </button>
-        <button
-          onClick={handleSave}
-          disabled={!canSave}
-          className="journal-save-btn px-8 py-2.5 rounded-full text-sm font-semibold transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          Save
-        </button>
+      <div className="relative group">
+        <Textarea
+          placeholder="Start writing your heart out..."
+          value={entry}
+          onChange={(e) => setEntry(e.target.value)}
+          className="min-h-[300px] text-lg rounded-3xl border-muted bg-muted/20 p-8 shadow-inner transition-all focus:bg-background focus:ring-2 focus:ring-primary/20"
+        />
+        <div className="absolute bottom-6 right-6 text-xs text-muted-foreground pointer-events-none opacity-40 group-focus-within:opacity-100 transition-opacity">
+          {entry.length} characters
+        </div>
       </div>
+
+      <Button
+        className="w-full h-16 rounded-3xl text-lg font-bold shadow-xl transition-all hover:-translate-y-1 active:scale-95 disabled:opacity-50"
+        disabled={!entry.trim() || isSaving}
+        onClick={handleSave}
+      >
+        {isSaving ? "Saving..." : "Save Entry"}
+        {!isSaving && <Send className="ml-2 w-5 h-5" />}
+      </Button>
     </div>
   );
 };
