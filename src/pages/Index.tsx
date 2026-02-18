@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Check } from "lucide-react";
+import { getUserId } from "../lib/auth";
+import { saveJournalEntry, JournalEntry } from "../lib/db";
 
 const PROMPT = "What's one thing you're grateful for today?";
 
@@ -10,12 +12,25 @@ const Index = () => {
 
   const canSave = entry.trim().length > 0;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!canSave) return;
-    const existing = JSON.parse(localStorage.getItem("journal_entries") || "[]");
-    existing.push({ prompt: PROMPT, entry: entry.trim(), date: new Date().toISOString() });
-    localStorage.setItem("journal_entries", JSON.stringify(existing));
-    setSaved(true);
+
+    const userId = getUserId();
+    if (!userId) return;
+
+    const journalEntry: JournalEntry = {
+      content: entry.trim(),
+      logged_at: new Date().toISOString(),
+      tags: [],
+      is_private: true
+    };
+
+    try {
+      await saveJournalEntry(userId, journalEntry);
+      setSaved(true);
+    } catch (error) {
+      console.error("Failed to save journal entry:", error);
+    }
   };
 
   const handleSkip = () => {
