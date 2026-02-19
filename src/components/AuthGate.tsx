@@ -21,7 +21,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
             try {
                 const userId = await resolveUser();
                 if (!isMounted) return;
-                
+
                 if (userId) {
                     console.log('AuthGate: User verified:', userId);
                     setStatus('Syncing with database...');

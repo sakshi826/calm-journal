@@ -71,9 +71,7 @@ const Index = () => {
         <h1 className="text-3xl md:text-4xl font-bold text-foreground transition-all duration-500 min-h-[80px]">
           {PROMPTS[promptIndex]}
         </h1>
-        <Button variant="ghost" size="sm" onClick={nextPrompt} className="text-muted-foreground hover:text-primary rounded-full">
-          Gives me another prompt
-        </Button>
+
       </div>
 
       <div className="relative group">
@@ -94,7 +92,6 @@ const Index = () => {
         onClick={handleSave}
       >
         {isSaving ? "Saving..." : "Save Entry"}
-        {!isSaving && <Send className="ml-2 w-5 h-5" />}
       </Button>
     </div>
   );

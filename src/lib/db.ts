@@ -1,16 +1,11 @@
 ﻿import { supabase, setUserContext, isSupabaseConfigured } from './supabase';
 
-export interface JournalPrompt {
+export interface JournalEntry {
     id?: string;
     content: string;
-    category?: string;
-    is_active: boolean;
+    prompt?: string;
+    logged_at: string;
 }
-
-const MOCK_PROMPTS: JournalPrompt[] = [
-    { content: 'What are you grateful for today?', category: 'Gratitude', is_active: true },
-    { content: 'Describe a moment that made you smile recently.', category: 'Happiness', is_active: true }
-];
 
 export async function upsertUser(userId: number): Promise<void> {
     if (!isSupabaseConfigured) return;
@@ -22,33 +17,37 @@ export async function upsertUser(userId: number): Promise<void> {
     }
 }
 
-export async function saveJournalPrompt(userId: number, prompt: JournalPrompt) {
-    if (!isSupabaseConfigured) return;
+export async function saveJournalEntry(userId: number, entry: JournalEntry) {
+    if (!isSupabaseConfigured) {
+        console.log('DB: Mock saving journal entry:', entry);
+        return;
+    }
     try {
         await setUserContext(userId);
-        const { error } = await supabase.from('journal_prompts').insert({
+        const { error } = await supabase.from('journal_entries').insert({
             user_id: userId,
-            ...prompt
+            ...entry
         });
         if (error) throw error;
     } catch (e) {
-        console.error('DB: saveJournalPrompt failed:', e);
+        console.error('DB: saveJournalEntry failed:', e);
     }
 }
 
-export async function getJournalPrompts(userId: number): Promise<JournalPrompt[]> {
-    if (!isSupabaseConfigured) return MOCK_PROMPTS;
+export async function getJournalEntries(userId: number): Promise<JournalEntry[]> {
+    if (!isSupabaseConfigured) return [];
     try {
         await setUserContext(userId);
         const { data, error } = await supabase
-            .from('journal_prompts')
+            .from('journal_entries')
             .select('*')
-            .eq('user_id', userId);
+            .eq('user_id', userId)
+            .order('logged_at', { ascending: false });
 
         if (error) throw error;
-        return data || MOCK_PROMPTS;
+        return data || [];
     } catch (e) {
-        console.error('DB: getJournalPrompts failed:', e);
-        return MOCK_PROMPTS;
+        console.error('DB: getJournalEntries failed:', e);
+        return [];
     }
 }
